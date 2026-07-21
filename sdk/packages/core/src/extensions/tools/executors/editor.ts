@@ -176,9 +176,10 @@ async function replaceInFile(
 ): Promise<string> {
 	const content = await fs.readFile(filePath, encoding);
 	const eol = detectLineEnding(content);
+	const normalizedContent = normalizeLineEndings(content, eol);
 	const normalizedOldStr = normalizeLineEndings(oldStr, eol);
 	const normalizedNewStr = normalizeLineEndings(newStr ?? "", eol);
-	const occurrences = countOccurrences(content, normalizedOldStr);
+	const occurrences = countOccurrences(normalizedContent, normalizedOldStr);
 
 	if (occurrences === 0) {
 		throw new Error(`No replacement performed: text not found in ${filePath}.`);
@@ -192,7 +193,7 @@ async function replaceInFile(
 
 	// Replacer function so "$"-sequences in new_text ($&, $', $`, $$, $n)
 	// are inserted literally instead of being expanded by String.replace.
-	const updated = content.replace(normalizedOldStr, () => normalizedNewStr);
+	const updated = normalizedContent.replace(normalizedOldStr, () => normalizedNewStr);
 	await fs.writeFile(filePath, updated, { encoding });
 
 	const diff = createLineDiff(content, updated, maxDiffLines);

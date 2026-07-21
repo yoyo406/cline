@@ -260,6 +260,24 @@ describe("createEditorExecutor", () => {
 		});
 	});
 
+	it("replaces text in a mixed-line-endings file and normalizes to the file's EOL", async () => {
+		await withTempFile("a\r\nb\nc", async (filePath, dir) => {
+			const editor = createEditorExecutor();
+			const result = await editor(
+				{ path: filePath, old_text: "b\nc", new_text: "B\nC" },
+				dir,
+				context,
+			);
+
+			expect(result).toBe(
+				`Edited ${filePath}\n\`\`\`diff\n-2: b\n-3: c\n+2: B\n+3: C\n\`\`\``,
+			);
+			await expect(fs.readFile(filePath, "utf-8")).resolves.toBe(
+				"a\r\nB\r\nC",
+			);
+		});
+	});
+
 	it("rejects insert_line 0 with the valid one-based boundary range", async () => {
 		const dir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-editor-"));
 		const filePath = path.join(dir, "example.txt");
